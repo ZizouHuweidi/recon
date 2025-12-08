@@ -1,0 +1,12 @@
+/home/zizou/work/recon/recon.ServiceDefaults/bin/Debug/net10.0/recon.ServiceDefaults.deps.json
+/home/zizou/work/recon/recon.ServiceDefaults/bin/Debug/net10.0/recon.ServiceDefaults.dll
+/home/zizou/work/recon/recon.ServiceDefaults/bin/Debug/net10.0/recon.ServiceDefaults.pdb
+/home/zizou/work/recon/recon.ServiceDefaults/obj/Debug/net10.0/recon.ServiceDefaults.csproj.AssemblyReference.cache
+/home/zizou/work/recon/recon.ServiceDefaults/obj/Debug/net10.0/recon.ServiceDefaults.GeneratedMSBuildEditorConfig.editorconfig
+/home/zizou/work/recon/recon.ServiceDefaults/obj/Debug/net10.0/recon.ServiceDefaults.AssemblyInfoInputs.cache
+/home/zizou/work/recon/recon.ServiceDefaults/obj/Debug/net10.0/recon.ServiceDefaults.AssemblyInfo.cs
+/home/zizou/work/recon/recon.ServiceDefaults/obj/Debug/net10.0/recon.ServiceDefaults.csproj.CoreCompileInputs.cache
+/home/zizou/work/recon/recon.ServiceDefaults/obj/Debug/net10.0/recon.ServiceDefaults.dll
+/home/zizou/work/recon/recon.ServiceDefaults/obj/Debug/net10.0/refint/recon.ServiceDefaults.dll
+/home/zizou/work/recon/recon.ServiceDefaults/obj/Debug/net10.0/recon.ServiceDefaults.pdb
+/home/zizou/work/recon/recon.ServiceDefaults/obj/Debug/net10.0/ref/recon.ServiceDefaults.dll
