@@ -1,12 +1,20 @@
 server:
   http_listen_port: 3200
 
+memberlist:
+  abort_if_cluster_join_fails: false
+  bind_port: 7946
+  join_members:
+    - tempo:7946
+
 distributor:
   receivers:
     otlp:
       protocols:
         grpc:
+          endpoint: "0.0.0.0:4317"
         http:
+          endpoint: "0.0.0.0:4318"
 
 ingester:
   trace_idle_period: 10s
@@ -20,10 +28,26 @@ compactor:
     block_retention: 1h
     compacted_block_retention: 10m
 
+metrics_generator:
+  registry:
+    external_labels:
+      source: tempo
+      cluster: docker-compose
+  storage:
+    path: /tmp/tempo/generator/wal
+    remote_write:
+      - url: http://prometheus:9090/api/v1/write
+        send_exemplars: true
+  traces_storage:
+    path: /tmp/tempo/generator/traces_wal
+
 storage:
   trace:
-    backend: local                     # backend configuration to use
+    backend: local
     wal:
-      path: /tmp/tempo/wal             # where to store the the wal locally
+      path: /tmp/tempo/wal
     local:
       path: /tmp/tempo/blocks
+
+overrides:
+  metrics_generator_processors: [service-graphs, span-metrics, local-blocks]

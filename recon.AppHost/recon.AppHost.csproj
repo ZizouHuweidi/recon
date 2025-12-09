@@ -11,10 +11,10 @@
   <ItemGroup>
     <ProjectReference Include="..\recon.Goyim\recon.Goyim.csproj" />
     <ProjectReference Include="..\recon.Mossad\recon.Mossad.csproj" />
-    <ProjectReference Include="..\recon.Web\recon.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.0.2" />
     <PackageReference Include="Aspire.Hosting.Redis" Version="13.0.2" />
   </ItemGroup>
 

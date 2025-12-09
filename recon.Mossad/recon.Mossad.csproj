@@ -12,4 +12,10 @@
   <ItemGroup>
     <ProjectReference Include="..\recon.ServiceDefaults\recon.ServiceDefaults.csproj" />
   </ItemGroup>
+
+
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.StackExchange.Redis" Version="13.0.2" />
+  </ItemGroup>
 </Project>

@@ -33,10 +33,6 @@ public static class Extensions
                 {
                     options.Endpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"] ?? "http://localhost:4317";
                     options.Protocol = OtlpProtocol.Grpc;
-                    options.ResourceAttributes = new Dictionary<string, object>
-                    {
-                        ["service.name"] = builder.Environment.ApplicationName
-                    };
                 })
                 .WriteTo.Console();
         });

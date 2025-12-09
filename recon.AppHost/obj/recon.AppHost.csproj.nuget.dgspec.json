@@ -60,6 +60,10 @@
               "version": "[13.0.2, )",
               "autoReferenced": true
             },
+            "Aspire.Hosting.PostgreSQL": {
+              "target": "Package",
+              "version": "[13.0.2, )"
+            },
             "Aspire.Hosting.Redis": {
               "target": "Package",
               "version": "[13.0.2, )"

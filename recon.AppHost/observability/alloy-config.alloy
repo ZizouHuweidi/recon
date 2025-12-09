@@ -25,7 +25,7 @@ otelcol.processor.batch "default" {
 
 otelcol.exporter.otlphttp "mossad" {
   client {
-    endpoint = "http://host.docker.internal:5051" # Assuming 5051 is Mossad's port
+    endpoint = "http://host.docker.internal:5051" // Assuming 5051 is Mossad's port
     tls {
       insecure = true
     }

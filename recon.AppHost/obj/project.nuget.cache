@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "0ibN6T7xJw8=",
+  "dgSpecHash": "F2dUCczeSsM=",
   "success": true,
   "projectFilePath": "/home/zizou/work/recon/recon.AppHost/recon.AppHost.csproj",
   "expectedPackageFiles": [
@@ -8,7 +8,9 @@
     "/home/zizou/.nuget/packages/aspire.hosting/13.0.2/aspire.hosting.13.0.2.nupkg.sha512",
     "/home/zizou/.nuget/packages/aspire.hosting.apphost/13.0.2/aspire.hosting.apphost.13.0.2.nupkg.sha512",
     "/home/zizou/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.0.2/aspire.hosting.orchestration.linux-x64.13.0.2.nupkg.sha512",
+    "/home/zizou/.nuget/packages/aspire.hosting.postgresql/13.0.2/aspire.hosting.postgresql.13.0.2.nupkg.sha512",
     "/home/zizou/.nuget/packages/aspire.hosting.redis/13.0.2/aspire.hosting.redis.13.0.2.nupkg.sha512",
+    "/home/zizou/.nuget/packages/aspnetcore.healthchecks.npgsql/9.0.0/aspnetcore.healthchecks.npgsql.9.0.0.nupkg.sha512",
     "/home/zizou/.nuget/packages/aspnetcore.healthchecks.redis/9.0.0/aspnetcore.healthchecks.redis.9.0.0.nupkg.sha512",
     "/home/zizou/.nuget/packages/aspnetcore.healthchecks.uris/9.0.0/aspnetcore.healthchecks.uris.9.0.0.nupkg.sha512",
     "/home/zizou/.nuget/packages/fractions/7.3.0/fractions.7.3.0.nupkg.sha512",
@@ -63,6 +65,7 @@
     "/home/zizou/.nuget/packages/microsoft.visualstudio.validation/17.8.8/microsoft.visualstudio.validation.17.8.8.nupkg.sha512",
     "/home/zizou/.nuget/packages/nerdbank.streams/2.12.87/nerdbank.streams.2.12.87.nupkg.sha512",
     "/home/zizou/.nuget/packages/newtonsoft.json/13.0.4/newtonsoft.json.13.0.4.nupkg.sha512",
+    "/home/zizou/.nuget/packages/npgsql/8.0.3/npgsql.8.0.3.nupkg.sha512",
     "/home/zizou/.nuget/packages/pipelines.sockets.unofficial/2.2.8/pipelines.sockets.unofficial.2.2.8.nupkg.sha512",
     "/home/zizou/.nuget/packages/polly.core/8.6.4/polly.core.8.6.4.nupkg.sha512",
     "/home/zizou/.nuget/packages/semver/3.0.0/semver.3.0.0.nupkg.sha512",
