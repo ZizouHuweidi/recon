@@ -24,7 +24,7 @@ public static class Extensions
     {
         builder.ConfigureOpenTelemetry();
 
-        builder.Services.AddSerilog((sp, loggerConfig) =>
+        builder.Services.AddSerilog((sp, loggerConfig)  =>
         {
             loggerConfig
                 .ReadFrom.Configuration(builder.Configuration)
@@ -33,6 +33,21 @@ public static class Extensions
                 {
                     options.Endpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"] ?? "http://localhost:4317";
                     options.Protocol = OtlpProtocol.Grpc;
+                    
+                    // Parse and add headers (e.g., "x-hyperdx-api-key=value")
+                    var headers = builder.Configuration["OTEL_EXPORTER_OTLP_HEADERS"];
+                    if (!string.IsNullOrEmpty(headers))
+                    {
+                        var headerPairs = headers.Split(',');
+                        foreach (var pair in headerPairs)
+                        {
+                            var parts = pair.Split('=', 2);
+                            if (parts.Length == 2)
+                            {
+                                options.Headers.Add(parts[0].Trim(), parts[1].Trim());
+                            }
+                        }
+                    }
                 })
                 .WriteTo.Console();
         });

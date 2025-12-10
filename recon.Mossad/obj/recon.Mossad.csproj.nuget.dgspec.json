@@ -49,21 +49,9 @@
         "net10.0": {
           "targetAlias": "net10.0",
           "dependencies": {
-            "Aspire.StackExchange.Redis": {
+            "ClickHouse.Client": {
               "target": "Package",
-              "version": "[13.0.2, )"
-            },
-            "Google.Protobuf": {
-              "target": "Package",
-              "version": "[3.33.2, )"
-            },
-            "OpenTelemetry.Exporter.OpenTelemetryProtocol": {
-              "target": "Package",
-              "version": "[1.14.0, )"
-            },
-            "OpenTelemetry.Extensions.Hosting": {
-              "target": "Package",
-              "version": "[1.14.0, )"
+              "version": "[7.14.0, )"
             }
           },
           "imports": [

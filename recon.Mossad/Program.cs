@@ -1,134 +1,220 @@
-
-using System.Threading.Channels;
-using StackExchange.Redis;
-using recon.Mossad;
-using System.Text.Json;
+using ClickHouse.Client.ADO;
+using ClickHouse.Client.Utility;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
-// Register Redis
-builder.AddRedisClient("cache");
-
-// Register Channel for Producer-Consumer
-var channel = Channel.CreateUnbounded<string>();
-builder.Services.AddSingleton(channel);
-
-// Register Worker
-builder.Services.AddHostedService<TelemetryWorker>();
+// Register ClickHouse connection
+builder.Services.AddSingleton(_ => 
+{
+    var connectionString = "Host=localhost;Port=8123;Database=default;User=default;Password=";
+    return new ClickHouseConnection(connectionString);
+});
 
 var app = builder.Build();
 
+app.MapDefaultEndpoints();
 
-
-// OTLP HTTP endpoint for receiving logs from Alloy
-app.MapPost("/v1/logs", async (HttpRequest request, Channel<string> channel) =>
+// GET /logs - Query logs from ClickHouse
+app.MapGet("/logs", async (ClickHouseConnection ch, int limit = 50, int offset = 0) =>
 {
     try
     {
-        using var reader = new StreamReader(request.Body);
-        var body = await reader.ReadToEndAsync();
-
-        // Try to parse as JSON (OTLP JSON format)
-        if (!string.IsNullOrEmpty(body))
+        await ch.OpenAsync();
+        
+        var query = $@"
+            SELECT 
+                Timestamp,
+                TimestampTime,
+                ServiceName,
+                SeverityText,
+                Body,
+                TraceId,
+                SpanId
+            FROM otel_logs
+            ORDER BY Timestamp DESC
+            LIMIT {limit}
+            OFFSET {offset}
+        ";
+        
+        var command = ch.CreateCommand();
+        command.CommandText = query;
+        using var reader = await command.ExecuteReaderAsync();
+        
+        var logs = new List<object>();
+        while (await reader.ReadAsync())
         {
-            try
+            logs.Add(new
             {
-                var jsonDoc = JsonDocument.Parse(body);
-                // Extract log records from OTLP JSON format
-                if (jsonDoc.RootElement.TryGetProperty("resourceLogs", out var resourceLogs))
-                {
-                    foreach (var resourceLog in resourceLogs.EnumerateArray())
-                    {
-                        if (resourceLog.TryGetProperty("scopeLogs", out var scopeLogs))
-                        {
-                            foreach (var scopeLog in scopeLogs.EnumerateArray())
-                            {
-                                if (scopeLog.TryGetProperty("logRecords", out var logRecords))
-                                {
-                                    foreach (var logRecord in logRecords.EnumerateArray())
-                                    {
-                                        // Extract log message
-                                        var timestamp = logRecord.TryGetProperty("timeUnixNano", out var ts)
-                                            ? DateTimeOffset.FromUnixTimeMilliseconds(ts.GetInt64() / 1_000_000).ToString("yyyy-MM-dd HH:mm:ss")
-                                            : DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-
-                                        var bodyValue = logRecord.TryGetProperty("body", out var bodyProp) && bodyProp.TryGetProperty("stringValue", out var strValue)
-                                            ? strValue.GetString() ?? ""
-                                            : "";
-
-                                        var severityText = logRecord.TryGetProperty("severityText", out var sevText)
-                                            ? sevText.GetString() ?? "INFO"
-                                            : "INFO";
-
-                                        var logMessage = $"[{timestamp}] [{severityText}] {bodyValue}";
-
-                                        // Add attributes if present
-                                        if (logRecord.TryGetProperty("attributes", out var attrs))
-                                        {
-                                            var attrList = new List<string>();
-                                            foreach (var attr in attrs.EnumerateArray())
-                                            {
-                                                var key = attr.TryGetProperty("key", out var k) ? k.GetString() : "";
-                                                var value = attr.TryGetProperty("value", out var v) && v.TryGetProperty("stringValue", out var sv)
-                                                    ? sv.GetString() : "";
-                                                if (!string.IsNullOrEmpty(key))
-                                                    attrList.Add($"{key}={value}");
-                                            }
-                                            if (attrList.Any())
-                                                logMessage += $" | {string.Join(", ", attrList)}";
-                                        }
-
-                                        // Push to channel
-                                        await channel.Writer.WriteAsync(logMessage);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            catch
-            {
-                // If parsing fails, just store the raw body
-                await channel.Writer.WriteAsync($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] RAW: {body}");
-            }
+                timestamp = reader.GetDateTime(0),
+                timestampTime = reader.GetDateTime(1),
+                serviceName = reader.GetString(2),
+                severityText = reader.GetString(3),
+                body = reader.GetString(4),
+                traceId = reader.GetString(5),
+                spanId = reader.GetString(6)
+            });
         }
-
-        return Results.Ok();
+        
+        return Results.Ok(logs);
     }
     catch (Exception ex)
     {
-        return Results.Problem($"Failed to process logs: {ex.Message}");
+        return Results.Problem($"Failed to query logs: {ex.Message}");
+    }
+    finally
+    {
+        await ch.CloseAsync();
     }
 });
 
-app.MapPost("/ingest", async (HttpRequest request, Channel<string> channel) =>
+// GET /traces - Query traces from ClickHouse
+app.MapGet("/traces", async (ClickHouseConnection ch, int limit = 50, int offset = 0) =>
 {
-    using var reader = new StreamReader(request.Body);
-    var body = await reader.ReadToEndAsync();
-
-    // Push to Channel
-    await channel.Writer.WriteAsync(body);
-
-    return Results.Accepted();
+    try
+    {
+        await ch.OpenAsync();
+        
+        var query = $@"
+            SELECT 
+                Timestamp,
+                TraceId,
+                SpanId,
+                ParentSpanId,
+                ServiceName,
+                SpanName,
+                SpanKind,
+                Duration,
+                StatusCode,
+                StatusMessage
+            FROM otel_traces
+            ORDER BY Timestamp DESC
+            LIMIT {limit}
+            OFFSET {offset}
+        ";
+        
+        var command = ch.CreateCommand();
+        command.CommandText = query;
+        using var reader = await command.ExecuteReaderAsync();
+        
+        var traces = new List<object>();
+        while (await reader.ReadAsync())
+        {
+            traces.Add(new
+            {
+                timestamp = reader.GetDateTime(0),
+                traceId = reader.GetString(1),
+                spanId = reader.GetString(2),
+                parentSpanId = reader.GetString(3),
+                serviceName = reader.GetString(4),
+                spanName = reader.GetString(5),
+                spanKind = reader.GetString(6),
+                duration = reader.GetInt64(7),
+                statusCode = reader.GetString(8),
+                statusMessage = reader.GetString(9)
+            });
+        }
+        
+        return Results.Ok(traces);
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Failed to query traces: {ex.Message}");
+    }
+    finally
+    {
+        await ch.CloseAsync();
+    }
 });
 
-app.MapGet("/data", async (IConnectionMultiplexer redis) =>
+// GET /metrics - Query metrics from ClickHouse
+app.MapGet("/metrics", async (ClickHouseConnection ch, int limit = 50, int offset = 0, string type = "gauge") =>
 {
-    var db = redis.GetDatabase();
-    // Get last 50 items
-    var items = await db.ListRangeAsync("telemetry", 0, 49);
-    return Results.Ok(items.Select(x => x.ToString()));
+    try
+    {
+        await ch.OpenAsync();
+        
+        var tableName = type.ToLower() switch
+        {
+            "histogram" => "otel_metrics_histogram",
+            "sum" => "otel_metrics_sum",
+            _ => "otel_metrics_gauge"
+        };
+        
+        var query = $@"
+            SELECT 
+                TimeUnix,
+                ServiceName,
+                MetricName,
+                Value
+            FROM {tableName}
+            ORDER BY TimeUnix DESC
+            LIMIT {limit}
+            OFFSET {offset}
+        ";
+        
+        var command = ch.CreateCommand();
+        command.CommandText = query;
+        using var reader = await command.ExecuteReaderAsync();
+        
+        var metrics = new List<object>();
+        while (await reader.ReadAsync())
+        {
+            metrics.Add(new
+            {
+                timeUnix = reader.GetInt64(0),
+                serviceName = reader.GetString(1),
+                metricName = reader.GetString(2),
+                value = reader.GetDouble(3)
+            });
+        }
+        
+        return Results.Ok(metrics);
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Failed to query metrics: {ex.Message}");
+    }
+    finally
+    {
+        await ch.CloseAsync();
+    }
 });
 
-app.MapDelete("/data", async (IConnectionMultiplexer redis) =>
+// GET /stats - Get database stats
+app.MapGet("/stats", async (ClickHouseConnection ch) =>
 {
-    var db = redis.GetDatabase();
-    await db.KeyDeleteAsync("telemetry");
-    return Results.Ok("Cleared");
+    try
+    {
+        await ch.OpenAsync();
+        
+        var stats = new
+        {
+            logs = await GetTableCount(ch, "otel_logs"),
+            traces = await GetTableCount(ch, "otel_traces"),
+            metrics_gauge = await GetTableCount(ch, "otel_metrics_gauge"),
+            metrics_sum = await GetTableCount(ch, "otel_metrics_sum"),
+            metrics_histogram = await GetTableCount(ch, "otel_metrics_histogram")
+        };
+        
+        return Results.Ok(stats);
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Failed to get stats: {ex.Message}");
+    }
+    finally
+    {
+        await ch.CloseAsync();
+    }
 });
 
-app.MapDefaultEndpoints();
+async Task<long> GetTableCount(ClickHouseConnection ch, string tableName)
+{
+    var command = ch.CreateCommand();
+    command.CommandText = $"SELECT count() FROM {tableName}";
+    var result = await command.ExecuteScalarAsync();
+    return Convert.ToInt64(result);
+}
 
 app.Run();
