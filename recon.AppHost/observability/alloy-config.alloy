@@ -16,20 +16,22 @@ otelcol.receiver.otlp "default" {
 otelcol.processor.batch "default" {
   output {
     metrics = [otelcol.exporter.prometheus.default.input]
-    logs    = [otelcol.exporter.loki.default.input]
-    traces  = [otelcol.exporter.otlp.tempo.input]
+    //  logs    = [otelcol.exporter.loki.default.input]
+    // traces  = [otelcol.exporter.otlp.tempo.input]
     // Export to Mossad (running on host)
     // logs = [otelcol.exporter.otlphttp.mossad.input] 
+    logs = [otelcol.exporter.loki.default.input, otelcol.exporter.otlphttp.mossad.input] 
   }
 }
 
 otelcol.exporter.otlphttp "mossad" {
   client {
-    endpoint = "http://host.docker.internal:5051" // Assuming 5051 is Mossad's port
+    endpoint = "http://host.docker.internal:5051"
     tls {
       insecure = true
     }
   }
+  encoding = "json"
 }
 
 otelcol.exporter.loki "default" {
