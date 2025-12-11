@@ -10,6 +10,7 @@ using OpenTelemetry.Trace;
 using Serilog;
 using Serilog.Sinks.OpenTelemetry;
 
+
 namespace Microsoft.Extensions.Hosting;
 
 // Adds common Aspire services: service discovery, resilience, health checks, and OpenTelemetry.
@@ -24,7 +25,7 @@ public static class Extensions
     {
         builder.ConfigureOpenTelemetry();
 
-        builder.Services.AddSerilog((sp, loggerConfig)  =>
+        builder.Services.AddSerilog((sp, loggerConfig) =>
         {
             loggerConfig
                 .ReadFrom.Configuration(builder.Configuration)
@@ -33,24 +34,10 @@ public static class Extensions
                 {
                     options.Endpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"] ?? "http://localhost:4317";
                     options.Protocol = OtlpProtocol.Grpc;
-                    
-                    // Parse and add headers (e.g., "x-hyperdx-api-key=value")
-                    var headers = builder.Configuration["OTEL_EXPORTER_OTLP_HEADERS"];
-                    if (!string.IsNullOrEmpty(headers))
-                    {
-                        var headerPairs = headers.Split(',');
-                        foreach (var pair in headerPairs)
-                        {
-                            var parts = pair.Split('=', 2);
-                            if (parts.Length == 2)
-                            {
-                                options.Headers.Add(parts[0].Trim(), parts[1].Trim());
-                            }
-                        }
-                    }
                 })
                 .WriteTo.Console();
         });
+
 
         builder.AddDefaultHealthChecks();
 
@@ -64,12 +51,6 @@ public static class Extensions
             // Turn on service discovery by default
             http.AddServiceDiscovery();
         });
-
-        // Uncomment the following to restrict the allowed schemes for service discovery.
-        // builder.Services.Configure<ServiceDiscoveryOptions>(options =>
-        // {
-        //     options.AllowedSchemes = ["https"];
-        // });
 
         return builder;
     }
@@ -98,8 +79,6 @@ public static class Extensions
                             !context.Request.Path.StartsWithSegments(HealthEndpointPath)
                             && !context.Request.Path.StartsWithSegments(AlivenessEndpointPath)
                     )
-                    // Uncomment the following line to enable gRPC instrumentation (requires the OpenTelemetry.Instrumentation.GrpcNetClient package)
-                    //.AddGrpcClientInstrumentation()
                     .AddHttpClientInstrumentation();
             });
 
@@ -116,13 +95,6 @@ public static class Extensions
         {
             builder.Services.AddOpenTelemetry().UseOtlpExporter();
         }
-
-        // Uncomment the following lines to enable the Azure Monitor exporter (requires the Azure.Monitor.OpenTelemetry.AspNetCore package)
-        //if (!string.IsNullOrEmpty(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]))
-        //{
-        //    builder.Services.AddOpenTelemetry()
-        //       .UseAzureMonitor();
-        //}
 
         return builder;
     }
