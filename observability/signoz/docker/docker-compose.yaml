@@ -79,10 +79,13 @@ services:
     restart: on-failure
     volumes:
       - ../common/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/:z
-
   zookeeper-1:
     !!merge <<: *zookeeper-defaults
     container_name: signoz-zookeeper-1
+    # ports:
+    #   - "2181:2181"
+    #   - "2888:2888"
+    #   - "3888:3888"
     volumes:
       - zookeeper-1:/bitnami/zookeeper
     environment:
@@ -91,10 +94,13 @@ services:
       - ZOO_AUTOPURGE_INTERVAL=1
       - ZOO_ENABLE_PROMETHEUS_METRICS=yes
       - ZOO_PROMETHEUS_METRICS_PORT_NUMBER=9141
-
   clickhouse:
     !!merge <<: *clickhouse-defaults
     container_name: signoz-clickhouse
+    # ports:
+    #   - "9000:9000"
+    #   - "8123:8123"
+    #   - "9181:9181"
     volumes:
       - ../common/clickhouse/config.xml:/etc/clickhouse-server/config.xml:z
       - ../common/clickhouse/users.xml:/etc/clickhouse-server/users.xml:z
@@ -102,7 +108,7 @@ services:
       - ../common/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/:z
       - ../common/clickhouse/cluster.xml:/etc/clickhouse-server/config.d/cluster.xml:z
       - clickhouse:/var/lib/clickhouse/
-
+      # - ../common/clickhouse/storage.xml:/etc/clickhouse-server/config.d/storage.xml
   signoz:
     !!merge <<: *db-depend
     image: signoz/signoz:${VERSION:-v0.104.0}
@@ -111,6 +117,7 @@ services:
       - --config=/root/config/prometheus.yml
     ports:
       - "8080:8080" # signoz port
+    #   - "6060:6060"     # pprof port
     volumes:
       - ../common/signoz/prometheus.yml:/root/config/prometheus.yml:z
       - ../common/dashboards:/root/config/dashboards:z
@@ -135,7 +142,6 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-
   otel-collector:
     !!merge <<: *db-depend
     image: signoz/signoz-otel-collector:${OTELCOL_TAG:-v0.129.12}
@@ -152,12 +158,12 @@ services:
       - OTEL_RESOURCE_ATTRIBUTES=host.name=signoz-host,os.type=linux
       - LOW_CARDINAL_EXCEPTION_GROUPING=false
     ports:
+      # - "1777:1777"     # pprof extension
       - "4317:4317" # OTLP gRPC receiver
       - "4318:4318" # OTLP HTTP receiver
     depends_on:
       signoz:
         condition: service_healthy
-
   schema-migrator-sync:
     !!merge <<: *common
     image: signoz/signoz-schema-migrator:${OTELCOL_TAG:-v0.129.12}
@@ -170,7 +176,6 @@ services:
       clickhouse:
         condition: service_healthy
     restart: on-failure
-
   schema-migrator-async:
     !!merge <<: *db-depend
     image: signoz/signoz-schema-migrator:${OTELCOL_TAG:-v0.129.12}
@@ -180,7 +185,6 @@ services:
       - --dsn=tcp://clickhouse:9000
       - --up=
     restart: on-failure
-
 networks:
   signoz-net:
     name: signoz-net
