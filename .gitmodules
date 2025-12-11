@@ -1,3 +1,0 @@
-[submodule "recon.AppHost/observability/ClickStack"]
-	path = recon.AppHost/observability/ClickStack
-	url = https://github.com/ClickHouse/ClickStack.git
