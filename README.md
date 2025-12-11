@@ -1,1 +1,1 @@
-Testing out a few otel observability stacks. Namely Grafana, Signoz and Clcikstack.
+Testing out a few otel observability stacks.
