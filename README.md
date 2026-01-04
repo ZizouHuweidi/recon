@@ -1,69 +1,80 @@
-# Recon API
+# Recon Telemetry Test Server
 
-.NET 10 Web API with **plug-and-play observability** - switch between Grafana, Signoz, or ClickStack without code changes.
+A minimal Go HTTP server to test telemetry stacks (Grafana & ClickStack).
+
+## Features
+- OpenTelemetry traces, metrics, and logs
+- Standard Go 1.23 HTTP router with method-based routing
+- Configurable OTLP endpoint and API key headers
+- Works with both Grafana Alloy and HyperDX/ClickStack
 
 ## Quick Start
 
+### 1. Run the Go server
+
 ```bash
-# 1. Start PostgreSQL
-docker-compose up -d
+# Default: connects to localhost:4317
+go run cmd/main.go
 
-# 2. Run API
-dotnet run --project recon.Api
-# API runs on http://localhost:5138
-
-# 3. Test
-curl http://localhost:5138/health
-curl http://localhost:5138/users
+# With custom OTLP endpoint and API key
+OTLP_ENDPOINT=your-otel-collector:4317 \
+OTLP_HEADERS=x-hyperdx-api-key=your-api-key \
+PORT=7777 \
+go run cmd/main.go
 ```
 
----
+### 2. Run telemetry stacks
 
-## Observability Demo
-
-**Switch backends by editing `recon.Api/appsettings.Development.json`:**
-
-### Grafana / Signoz (No Auth)
-```json
-{
-  "OTLP_ENDPOINT": "http://localhost:4317",
-  "OTLP_HEADERS": ""
-}
+**For Grafana:**
+```bash
+cd observability/grafana
+docker compose up -d
+# Access Grafana at http://localhost:3000
 ```
 
-### ClickStack (Requires Auth)
-```json
-{
-  "OTLP_ENDPOINT": "http://localhost:4317",
-  "OTLP_HEADERS": "authorization=<your-ingestion-key>"
-}
-```
-
-**Start ClickStack:**
+**For ClickStack/HyperDX:**
 ```bash
 cd observability/clickstack
+# Set required environment variables in .env file, then:
 docker compose up -d
-# UI: http://localhost:8080
 ```
 
-**Restart API after config change.**
+### 3. Generate traffic
 
----
+```bash
+curl http://localhost:7777/health
+curl http://localhost:7777/api/test
+curl http://localhost:7777/users
+curl http://localhost:7777/api/error
+```
 
-## What's Exported
+## API Endpoints
 
-- ✅ **Traces** (OpenTelemetry SDK)
-- ✅ **Metrics** (ASP.NET Core, HTTP, Runtime)
-- ✅ **Logs** (Serilog → OpenTelemetry)
+- `GET /` - Root endpoint
+- `GET /health` - Health check
+- `GET /users` - Get users list
+- `POST /users` - Create user
+- `GET /api/test` - Test endpoint with metrics
+- `GET /api/error` - Error endpoint for testing
 
-All via OTLP gRPC to port 4317.
+## Configuration
 
----
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| `OTLP_ENDPOINT` | `localhost:4317` | OTLP collector endpoint |
+| `OTLP_HEADERS` | - | API key headers (format: `key=value`) |
+| `PORT` | `7777` | Server port |
 
-## Services
+## For ClickStack/HyperDX
 
-| Service    | Port | URL                       |
-|------------|------|---------------------------|
-| API        | 5138 | http://localhost:5138     |
-| PostgreSQL | 5432 | localhost:5432            |
-| ClickStack | 8080 | http://localhost:8080     |
+Set the API key header:
+```bash
+OTLP_HEADERS=x-hyperdx-api-key=your-api-key-here
+```
+
+## Build Binary
+
+```bash
+go build -o bin/recon-go ./cmd/main.go
+./bin/recon-go
+```
